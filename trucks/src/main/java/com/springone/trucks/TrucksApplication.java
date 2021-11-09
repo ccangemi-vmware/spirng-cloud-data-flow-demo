@@ -3,8 +3,6 @@ package com.springone.trucks;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.scheduling.annotation.Scheduled;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -32,7 +30,6 @@ public class TrucksApplication {
 	}
 
 	@Bean
-	@Scheduled(fixedRate = 1000L)
 	public Supplier<Truck> generateTruck() {
 		return () -> randomTruck();
 	}

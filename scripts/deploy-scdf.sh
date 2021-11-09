@@ -94,13 +94,13 @@ fi
 echo "A release of bitnami/kube-prometheus, ${grafana_release_name}, is running on ${grafana_namespace} namespace"
 
 ## Installing and configuring spring-cloud-dataflow
-scdf_namespace="default"
+scdf_namespace="scdf"
 scdf_release_name="scdf"
 
 if ! helm status "${scdf_release_name}" >/dev/null; then
   echo "Install bitnami/spring-cloud-dataflow scdf_release_name=${scdf_release_name} scdf_namespace=${scdf_namespace}"
 
-  helm upgrade --wait -n "${scdf_namespace}" --install "${scdf_release_name}" bitnami/spring-cloud-dataflow \
+  helm upgrade --create-namespace --wait -n "${scdf_namespace}" --install "${scdf_release_name}" bitnami/spring-cloud-dataflow \
     --set kafka.enabled=true \
     --set rabbitmq.enabled=false \
     --set metrics.enabled=true \
@@ -112,7 +112,7 @@ echo "A release of bitnami/spring-cloud-dataflow, ${scdf_release_name}, is runni
 
 MARIADB_ROOT_PASSWORD=$(kubectl get secret --namespace "${scdf_namespace}" "${scdf_release_name}-mariadb" -o jsonpath="{.data.mariadb-root-password}" | base64 --decode)
 
-helm upgrade --wait -n "${scdf_namespace}" --install "${scdf_release_name}" bitnami/spring-cloud-dataflow \
+helm upgrade --wait -n "${scdf_namespace}" --install "${scdf_release_name}" --create-namespace bitnami/spring-cloud-dataflow \
   --set mariadb.rootUser.password=$MARIADB_ROOT_PASSWORD \
   --set kafka.enabled=true \
   --set rabbitmq.enabled=false \
