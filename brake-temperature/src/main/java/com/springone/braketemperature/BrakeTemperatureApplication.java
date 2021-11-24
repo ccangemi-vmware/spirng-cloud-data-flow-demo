@@ -1,19 +1,14 @@
 package com.springone.braketemperature;
 
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.kstream.Grouped;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.TimeWindows;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
-import org.springframework.kafka.support.serializer.JsonSerde;
-
 import java.time.Duration;
 import java.util.Date;
 import java.util.function.Function;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+
+import reactor.core.publisher.Flux;
 
 @SpringBootApplication
 public class BrakeTemperatureApplication {
@@ -22,6 +17,7 @@ public class BrakeTemperatureApplication {
 		SpringApplication.run(BrakeTemperatureApplication.class, args);
 	}
 
+	/*
 	@Bean
 	public Function<KStream<Object, Truck>, KStream<String, AverageBrakeTemperatureAccumulator>> processBrakeTemperature() {
 
@@ -44,6 +40,27 @@ public class BrakeTemperatureApplication {
 					v.setEnd(new Date(k.window().end()));
 					return new KeyValue<>(k.key(), v);
 				});
+	}*/
+
+	@Bean
+	public Function<Flux<Truck>, Flux<AverageBrakeTemperatureAccumulator>> processBrakeTemperature() {
+		return input -> input.window(Duration.ofSeconds(10))
+		 	.flatMap(
+				window -> { 
+					Date windowsStart = new Date(); 
+					return window.groupBy(Truck::getId).flatMap(
+						group -> group.reduce(new AverageBrakeTemperatureAccumulator(windowsStart), 
+							(agg, t) -> 
+								{
+									agg.setCount(agg.getCount() + 1);
+									agg.setTotalValue(t.getBrakeTemperature());
+									agg.setAverage(agg.getTotalValue() / agg.getCount());
+									agg.setId(t.getId());
+									return agg;
+								})
+						);
+				}
+			).map(agg -> { agg.setEnd(new Date()); return agg; });
 	}
 
 	static class AverageBrakeTemperatureAccumulator {
@@ -56,11 +73,15 @@ public class BrakeTemperatureApplication {
 
 		private double average;
 
-		private Date start;
+		private Date start = new Date();
 
 		private Date end;
 
 		public AverageBrakeTemperatureAccumulator() {
+		}
+
+		public AverageBrakeTemperatureAccumulator(Date start) {
+			this.start = start;
 		}
 
 		public AverageBrakeTemperatureAccumulator(int count, Float totalValue) {

@@ -101,12 +101,13 @@ if ! helm status "${scdf_release_name}" >/dev/null; then
   echo "Install bitnami/spring-cloud-dataflow scdf_release_name=${scdf_release_name} scdf_namespace=${scdf_namespace}"
 
   helm upgrade --create-namespace --wait -n "${scdf_namespace}" --install "${scdf_release_name}" bitnami/spring-cloud-dataflow \
-    --set kafka.enabled=true \
-    --set rabbitmq.enabled=false \
+    --set kafka.enabled=false \
+    --set rabbitmq.enabled=true \
     --set metrics.enabled=true \
     --set metrics.serviceMonitor.enabled=true \
     --set metrics.serviceMonitor.namespace="${prometheus_namespace}" \
-    --set server.configuration.metricsDashboard="http://localhost:3000" >/dev/null
+    --set server.configuration.metricsDashboard="http://localhost:3000" >/dev/null \
+    --set deployer.readinessProbe.initialDelaySeconds=30
 fi
 echo "A release of bitnami/spring-cloud-dataflow, ${scdf_release_name}, is running on ${scdf_namespace} namespace"
 
@@ -114,12 +115,13 @@ MARIADB_ROOT_PASSWORD=$(kubectl get secret --namespace "${scdf_namespace}" "${sc
 
 helm upgrade --wait -n "${scdf_namespace}" --install "${scdf_release_name}" --create-namespace bitnami/spring-cloud-dataflow \
   --set mariadb.rootUser.password=$MARIADB_ROOT_PASSWORD \
-  --set kafka.enabled=true \
-  --set rabbitmq.enabled=false \
+  --set kafka.enabled=false \
+  --set rabbitmq.enabled=true \
   --set metrics.enabled=true \
   --set metrics.serviceMonitor.enabled=true \
   --set metrics.serviceMonitor.namespace="${prometheus_namespace}" \
-  --set server.configuration.metricsDashboard="http://localhost:3000" >/dev/null
+  --set server.configuration.metricsDashboard="http://localhost:3000" >/dev/null \
+  --set deployer.readinessProbe.initialDelaySeconds=30
 
 echo ""
 echo "### Stack succesfully deployed ###"
